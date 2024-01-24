@@ -16,6 +16,11 @@ In this project, we provide interfaces for various geometric operations on 2D/3D
 <img width=100% src="./misc/media/barn_lsd.gif" style="margin:-300px 0px -300px 0px">
 </p>
 
+Results with MultiScan dataset
+<p align="center">
+<img width=100% src="./misc/media/multiscan_limap.png">
+</p>
+
 ## Installation
 
 **Note**: COLMAP has been under active development since summer 2023, so we currently only support COLMAP 3.8.

@@ -1,4 +1,5 @@
-import os, sys
+import os
+import json
 import cv2
 import numpy as np
 import copy
@@ -41,54 +42,32 @@ class MultiScan:
 
     def read_intrinsics(self, fname, mode="color"):
         with open(fname, "r") as f:
-            lines = f.readlines()
-        img_hw = [-1, -1]
-        K = np.zeros((3, 3))
-        K[2, 2] = 1.0
-        for line in lines:
-            if line[:11] == mode + "Height":
-                img_hw[0] = float(line.strip("\n").split("=")[1])
-                continue
-            if line[:10] == mode + "Width":
-                img_hw[1] = float(line.strip("\n").split("=")[1])
-                continue
-            if line[:8] == "fx_" + mode:
-                K[0, 0] = float(line.strip("\n").split("=")[1])
-                continue
-            if line[:8] == "fy_" + mode:
-                K[1, 1] = float(line.strip("\n").split("=")[1])
-                continue
-            if line[:8] == "mx_" + mode:
-                K[0, 2] = float(line.strip("\n").split("=")[1])
-                continue
-            if line[:8] == "my_" + mode:
-                K[1, 2] = float(line.strip("\n").split("=")[1])
-                continue
+            camera_data = json.load(f)
+        img_hw = [480, 640]
+        K = np.array(camera_data["intrinsic"]).reshape(3, 3).transpose()
         return K, img_hw
 
-    def read_pose(self, pose_txt):
-        with open(pose_txt, "r") as f:
-            lines = f.readlines()
-        mat = []
-        for line in lines:
-            dd = line.strip("\n").split()
-            dd = [float(k) for k in dd]
-            mat.append(dd)
-        mat = np.array(mat)
+    def read_pose(self, pose_json):
+        with open(pose_json, "r") as f:
+            camera_data = json.load(f)
+
+        mat = np.array(camera_data["extrinsic"]).reshape(4, 4).transpose()
+        mat = np.linalg.inv(mat)
         R_cam2world, t_cam2world = mat[:3, :3], mat[:3, 3]
         R = R_cam2world.T
         t = -R @ t_cam2world
         return R, t
 
     def loadinfos(self):
-        img_folder = os.path.join(self.scene_dir, "color")
-        pose_folder = os.path.join(self.scene_dir, "pose")
+        img_folder = os.path.join(self.scene_dir, "rgb")
+        pose_folder = os.path.join(self.scene_dir, "camera")
         depth_folder = os.path.join(self.scene_dir, "depth")
         n_images = len(os.listdir(img_folder))
-        index_list = np.arange(0, n_images, self.stride).tolist()
+        index_list = os.listdir(img_folder)
+        index_list = [x.split(".")[0] for x in index_list]
 
         # load intrinsic
-        fname_meta = os.path.join(self.scene_dir, "{0}.txt".format(self.scene_id))
+        fname_meta = os.path.join(pose_folder, "{0}.json".format(index_list[0]))
         K_orig, img_hw_orig = self.read_intrinsics(fname_meta)
         h_orig, w_orig = img_hw_orig[0], img_hw_orig[1]
         # reshape w.r.t max_image_dim
@@ -113,17 +92,17 @@ class MultiScan:
         # get imname_list and cameras
         self.imname_list, self.Rs, self.Ts = [], [], []
         for index in index_list:
-            imname = os.path.join(self.scene_dir, "color", "{0}.jpg".format(index))
+            imname = os.path.join(self.scene_dir, "rgb", "{0}.png".format(index))
             self.imname_list.append(imname)
 
-            pose_txt = os.path.join(self.scene_dir, "pose", "{0}.txt".format(index))
-            R, T = self.read_pose(pose_txt)
+            pose_json = os.path.join(self.scene_dir, "camera", "{0}.json".format(index))
+            R, T = self.read_pose(pose_json)
             self.Rs.append(R)
             self.Ts.append(T)
 
     def get_depth_fname(self, imname):
         depth_folder = os.path.join(self.scene_dir, "depth")
-        img_id = int(os.path.basename(imname)[:-4])
+        img_id = os.path.basename(imname)[:-4]
         depth_fname = os.path.join(depth_folder, "{0}.png".format(img_id))
         return depth_fname
 

@@ -53,7 +53,7 @@ def parse_config():
 
 def main():
     cfg = parse_config()
-    dataset = multiscan(cfg["data_dir"])
+    dataset = MultiScan(cfg["data_dir"])
     run_scene_multiscan(cfg, dataset, cfg["scene_id"])
 
 

@@ -1,0 +1,8 @@
+---
+##############################
+# global config
+data_dir: "/home/ys/dev/multiscan/ArticSceneVerse/outputs"
+scene_id: "scene_00021_00"
+max_image_dim: 800 
+stride: 5 
+
