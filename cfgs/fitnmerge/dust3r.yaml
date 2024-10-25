@@ -1,0 +1,10 @@
+---
+##############################
+# global config
+result_path: "/seaweedfs/training/experiments/mubin/test-data/bedroom_dust3r_results.pth"
+scene_id: "limap_dust3r"
+max_image_dim: -1
+stride: 1
+n_neighbors: 1
+n_visible_views: 1
+visualize: False
